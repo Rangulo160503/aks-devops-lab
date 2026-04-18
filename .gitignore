@@ -1,0 +1,18 @@
+# DATOS (NO SUBIR)
+data/
+artifacts/
+*.db
+*.csv
+
+# PYTHON
+__pycache__/
+*.pyc
+
+# HISTORIAL
+# Migración histórica desde JSON (ruta antigua; opcional si existe)
+web/run_history.json
+
+# ENV (secretos locales; el ejemplo `.env.example` sí se versiona)
+.env
+.env.*
+!.env.example

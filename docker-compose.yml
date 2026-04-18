@@ -1,0 +1,32 @@
+services:
+  backend:
+    build: .
+    image: proyecto-ml-backend:local
+    container_name: proyecto-ml-backend
+    ports:
+      - "5000:5000"
+    environment:
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-change-me}
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ./data:/app/data
+      - ./artifacts:/app/artifacts
+      - ./data.db:/app/data.db
+    restart: unless-stopped
+
+  # Placeholder para migración futura a PostgreSQL.
+  # Descomentar cuando la capa de persistencia soporte Postgres.
+  # postgres:
+  #   image: postgres:16-alpine
+  #   container_name: proyecto-ml-postgres
+  #   environment:
+  #     POSTGRES_USER: proyectoml
+  #     POSTGRES_PASSWORD: proyectoml
+  #     POSTGRES_DB: proyectoml
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - pgdata:/var/lib/postgresql/data
+
+# volumes:
+#   pgdata:
