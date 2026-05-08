@@ -107,16 +107,19 @@ walkthroughs.
 ### Azure infra
 
 ```bash
-cd infra/terraform
-terraform init   -backend-config="resource_group_name=tfstate-rg" \
-                 -backend-config="storage_account_name=<account>" \
-                 -backend-config="container_name=tfstate" \
-                 -backend-config="key=dev.tfstate"
+cd infra/bootstrap
+terraform init
+terraform apply -auto-approve
+terraform output -raw backend_config_dev > ../terraform/envs/dev.backend.hcl
+
+cd ../terraform
+terraform init   -backend-config=envs/dev.backend.hcl
 terraform plan   -var-file=envs/dev.tfvars -out=dev.tfplan
 terraform apply  dev.tfplan
 ```
 
-Full reference: [`docs/terraform.md`](docs/terraform.md).
+Full reference: [`docs/terraform.md`](docs/terraform.md) and
+[`docs/terraform-bootstrap.md`](docs/terraform-bootstrap.md).
 
 ## Blue/Green release
 
@@ -181,6 +184,7 @@ fmt checks on PRs.
 - [Deployment paths (local / Kubernetes / Azure)](docs/deployment.md)
 - [Blue/Green release flow](docs/bluegreen.md)
 - [Terraform on Azure](docs/terraform.md)
+- [Terraform backend bootstrap](docs/terraform-bootstrap.md)
 - [Azure DevOps pipelines](docs/pipelines.md)
 - ADRs:
   [0001 Postgres over SQLite](docs/adr/0001-postgres-over-sqlite.md) ·

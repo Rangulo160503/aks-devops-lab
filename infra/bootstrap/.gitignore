@@ -1,0 +1,13 @@
+# Defensive -- the repo root .gitignore already covers these. Repeated
+# here so this stack is safe to copy into other repos as-is.
+.terraform/
+.terraform.lock.hcl.bak
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json

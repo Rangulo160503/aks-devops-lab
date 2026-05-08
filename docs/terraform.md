@@ -16,13 +16,18 @@ infra/terraform/
 
 ## Remote state bootstrap
 
-Once per subscription:
+Use the dedicated bootstrap root (recommended):
 
 ```bash
-az group create -n tfstate-rg -l eastus
-az storage account create -n pmlstate$RANDOM -g tfstate-rg -l eastus --sku Standard_LRS
-az storage container create -n tfstate --account-name <account>
+cd infra/bootstrap
+terraform init
+terraform apply -auto-approve
+terraform output -raw backend_config_dev  > ../terraform/envs/dev.backend.hcl
+terraform output -raw backend_config_prod > ../terraform/envs/prod.backend.hcl
 ```
+
+Fallback (az CLI only): `scripts/tf-bootstrap.sh` or `scripts/tf-bootstrap.ps1`.
+Full guide: [`docs/terraform-bootstrap.md`](terraform-bootstrap.md).
 
 State key per environment:
 
@@ -37,10 +42,7 @@ State key per environment:
 cd infra/terraform
 
 terraform init \
-  -backend-config="resource_group_name=tfstate-rg" \
-  -backend-config="storage_account_name=<account>" \
-  -backend-config="container_name=tfstate" \
-  -backend-config="key=dev.tfstate"
+  -backend-config="envs/dev.backend.hcl"
 
 terraform plan  -var-file=envs/dev.tfvars -out=dev.tfplan
 terraform apply dev.tfplan

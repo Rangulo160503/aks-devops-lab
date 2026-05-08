@@ -5,10 +5,21 @@
 | `bluegreen-switch.sh`     | Atomically swap the active color (api + web).    |
 | `bluegreen-status.sh`     | Print current color + per-color replica counts.  |
 | `smoke.sh`                | Hit `/`, `/healthz`, `/readyz` and exit non-zero on failure. |
+| `tf-bootstrap.sh`         | az-CLI fallback for bootstrapping the Terraform remote-state backend. |
+| `tf-bootstrap.ps1`        | PowerShell variant of `tf-bootstrap.sh`.         |
+| `tf-destroy-main.sh`      | Destroy the MAIN Terraform stack only; refuses to touch the bootstrap stack. |
 
-All scripts are POSIX-ish bash with `set -euo pipefail`. They assume `kubectl`
-is configured against the target cluster (`KUBECONFIG`) and use no temporary
-state on disk beyond `/tmp`.
+All scripts are POSIX-ish bash with `set -euo pipefail`. The `bluegreen-*` /
+`smoke.sh` scripts assume `kubectl` is configured against the target cluster
+(`KUBECONFIG`); the `tf-*` scripts assume an authenticated `az` session
+(`az login`).
+
+## Terraform bootstrap
+
+The `tf-bootstrap.{sh,ps1}` scripts are an az-CLI-only equivalent of running
+`terraform apply` in `infra/bootstrap/`. Use whichever fits your shell. Both
+are idempotent and write `infra/terraform/envs/{dev,prod}.backend.hcl`. See
+[`docs/terraform-bootstrap.md`](../docs/terraform-bootstrap.md).
 
 ## Typical release flow
 

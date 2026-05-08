@@ -1,17 +1,28 @@
-# Remote state in Azure Blob Storage. The actual values are passed via
-# `terraform init -backend-config=...` from the pipeline / scripts to keep
-# secrets out of source control. Bootstrap is documented in
-# infra/terraform/README.md.
+# Remote state in Azure Blob Storage.
 #
-# Reference:
-#   https://developer.hashicorp.com/terraform/language/settings/backends/azurerm
+# This is a partial backend configuration: storage_account_name,
+# container_name, key and resource_group_name are supplied at init time
+# via a per-environment backend-config file:
+#
+#   terraform init -backend-config=envs/dev.backend.hcl
+#   terraform init -backend-config=envs/prod.backend.hcl
+#
+# Backend authentication: Microsoft Entra ID (use_azuread_auth = true).
+# No access keys, no SAS tokens, no client secrets in source. The
+# bootstrap step grants the operator / pipeline principal the role
+# `Storage Blob Data Contributor` on the storage account.
+#
+# How to produce the backend-config files:
+#   - Terraform bootstrap (canonical): infra/bootstrap/  ->
+#       `terraform output -raw backend_config_dev > envs/dev.backend.hcl`
+#   - az-CLI fallback:                  scripts/tf-bootstrap.{sh,ps1}
+#
+# References:
+#   https://developer.hashicorp.com/terraform/language/backend/azurerm
 #   https://learn.microsoft.com/azure/developer/terraform/store-state-in-azure-storage
+#   docs/terraform-bootstrap.md (in this repo)
 terraform {
   backend "azurerm" {
     use_azuread_auth = true
-    # resource_group_name  = "<set via -backend-config>"
-    # storage_account_name = "<set via -backend-config>"
-    # container_name       = "<set via -backend-config>"
-    # key                  = "<env>.tfstate"
   }
 }
