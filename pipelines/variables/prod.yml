@@ -1,0 +1,8 @@
+variables:
+  - group: pml-prod
+  # Group should provide:
+  #   aksServiceConnection : K8s service connection name for the prod cluster
+  #   aksClusterName       : pml-prod-aks
+  #   ingressHost          : app.example.com
+  #   currentColor         : 'blue' (the color currently serving traffic)
+  #   idleColor            : 'green' (the color we are deploying TO)

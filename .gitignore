@@ -1,18 +1,62 @@
-# DATOS (NO SUBIR)
-data/
-artifacts/
-*.db
-*.csv
-
-# PYTHON
+# Python
 __pycache__/
 *.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.ruff_cache/
 
-# HISTORIAL
-# Migración histórica desde JSON (ruta antigua; opcional si existe)
-web/run_history.json
+# Node
+node_modules/
+app/frontend/dist/
+app/frontend/.vite/
+*.tsbuildinfo
 
-# ENV (secretos locales; el ejemplo `.env.example` sí se versiona)
+# Docker / runtime
+*.db
+*.sqlite
+*.sqlite3
+data/
+artifacts/
+
+# Env / secrets (example file is versioned)
 .env
 .env.*
 !.env.example
+!compose/.env.example
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraform.lock.hcl.bak
+
+# Helm
+infra/helm/**/charts/
+infra/helm/**/Chart.lock
+
+# Kubernetes
+kubeconfig
+*.kubeconfig
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Tooling output
+agent-tools/

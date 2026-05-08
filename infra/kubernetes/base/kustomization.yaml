@@ -1,0 +1,22 @@
+# Optional convenience: `kubectl apply -k infra/kubernetes/base`.
+# Kustomize is shipped with kubectl since 1.14, so no extra tool is needed.
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: proyecto-ml
+
+commonLabels:
+  app.kubernetes.io/part-of: proyecto-ml
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - serviceaccount.yaml
+  - backend-deployment.yaml
+  - backend-service.yaml
+  - frontend-deployment.yaml
+  - frontend-service.yaml
+  - ingress.yaml
+  - hpa.yaml
+  - pdb.yaml

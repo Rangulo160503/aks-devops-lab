@@ -1,0 +1,10 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: proyecto-ml
+
+resources:
+  - ../../base
+  - backend-green.yaml
+  - frontend-green.yaml
+  - hpa-green.yaml

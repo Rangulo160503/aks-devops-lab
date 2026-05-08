@@ -1,0 +1,9 @@
+env                    = "dev"
+location               = "eastus"
+prefix                 = "pml"
+aks_node_count         = 2
+aks_node_size          = "Standard_B2s"
+aks_kubernetes_version = "1.30"
+pg_sku_name            = "B_Standard_B1ms"
+pg_storage_mb          = 32768
+storage_replication    = "LRS"

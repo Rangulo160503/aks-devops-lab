@@ -1,0 +1,57 @@
+parameters:
+  - name: environmentName
+    type: string
+  - name: aksServiceConnection
+    type: string
+  - name: targetColor
+    type: string
+  - name: previousColor
+    type: string
+
+jobs:
+  - deployment: bluegreen_swap
+    displayName: Swap traffic to ${{ parameters.targetColor }}
+    pool:
+      vmImage: ubuntu-latest
+    environment:
+      name: ${{ parameters.environmentName }}
+      resourceType: Kubernetes
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+            - checkout: self
+
+            - task: KubernetesManifest@1
+              displayName: Ensure manifests are present
+              inputs:
+                action: deploy
+                connectionType: kubernetesServiceConnection
+                kubernetesServiceConnection: ${{ parameters.aksServiceConnection }}
+                namespace: $(namespace)
+                manifests: |
+                  infra/kubernetes/base/configmap.yaml
+                  infra/kubernetes/base/backend-service.yaml
+                  infra/kubernetes/base/frontend-service.yaml
+
+            - script: |
+                chmod +x scripts/bluegreen-switch.sh scripts/smoke.sh
+                # Smoke the idle color before swapping.
+                kubectl -n $(namespace) port-forward svc/api-${{ parameters.targetColor }} 8001:80 &
+                PF_PID=$!
+                trap "kill $PF_PID || true" EXIT
+                sleep 3
+                ./scripts/smoke.sh http://localhost:8001
+              displayName: Smoke ${{ parameters.targetColor }}
+
+            - script: |
+                chmod +x scripts/bluegreen-switch.sh
+                ./scripts/bluegreen-switch.sh $(namespace) ${{ parameters.targetColor }}
+              displayName: Atomic Service swap
+
+            - script: |
+                # Soak window before scaling the previous color down.
+                sleep 60
+                kubectl -n $(namespace) scale deploy/api-${{ parameters.previousColor }} --replicas=0
+                kubectl -n $(namespace) scale deploy/web-${{ parameters.previousColor }} --replicas=0
+              displayName: Drain previous color (${{ parameters.previousColor }})

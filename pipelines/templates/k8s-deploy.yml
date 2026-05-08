@@ -1,0 +1,92 @@
+parameters:
+  - name: environmentName
+    type: string
+  - name: aksServiceConnection
+    type: string
+  - name: color
+    type: string
+    default: blue
+  - name: replicas
+    type: number
+    default: 2
+
+jobs:
+  - deployment: deploy_${{ parameters.color }}
+    displayName: Deploy ${{ parameters.color }} to ${{ parameters.environmentName }}
+    pool:
+      vmImage: ubuntu-latest
+    environment:
+      name: ${{ parameters.environmentName }}
+      resourceType: Kubernetes
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+            - checkout: self
+
+            - task: KubernetesManifest@1
+              displayName: Apply base manifests
+              inputs:
+                action: deploy
+                connectionType: kubernetesServiceConnection
+                kubernetesServiceConnection: ${{ parameters.aksServiceConnection }}
+                namespace: $(namespace)
+                manifests: |
+                  infra/kubernetes/base/namespace.yaml
+                  infra/kubernetes/base/configmap.yaml
+                  infra/kubernetes/base/serviceaccount.yaml
+                  infra/kubernetes/base/backend-deployment.yaml
+                  infra/kubernetes/base/backend-service.yaml
+                  infra/kubernetes/base/frontend-deployment.yaml
+                  infra/kubernetes/base/frontend-service.yaml
+                  infra/kubernetes/base/ingress.yaml
+                  infra/kubernetes/base/hpa.yaml
+                  infra/kubernetes/base/pdb.yaml
+                  infra/kubernetes/overlays/blue-green/backend-green.yaml
+                  infra/kubernetes/overlays/blue-green/frontend-green.yaml
+                  infra/kubernetes/overlays/blue-green/hpa-green.yaml
+
+            - task: Kubernetes@1
+              displayName: Set image (api-${{ parameters.color }})
+              inputs:
+                connectionType: Kubernetes Service Connection
+                kubernetesServiceEndpoint: ${{ parameters.aksServiceConnection }}
+                namespace: $(namespace)
+                command: set
+                arguments: image deploy/api-${{ parameters.color }} api=$(acrLoginServer)/proyecto-ml-api:$(imageTag)
+
+            - task: Kubernetes@1
+              displayName: Set image (web-${{ parameters.color }})
+              inputs:
+                connectionType: Kubernetes Service Connection
+                kubernetesServiceEndpoint: ${{ parameters.aksServiceConnection }}
+                namespace: $(namespace)
+                command: set
+                arguments: image deploy/web-${{ parameters.color }} web=$(acrLoginServer)/proyecto-ml-web:$(imageTag)
+
+            - task: Kubernetes@1
+              displayName: Scale ${{ parameters.color }} to ${{ parameters.replicas }}
+              inputs:
+                connectionType: Kubernetes Service Connection
+                kubernetesServiceEndpoint: ${{ parameters.aksServiceConnection }}
+                namespace: $(namespace)
+                command: scale
+                arguments: deploy/api-${{ parameters.color }} --replicas=${{ parameters.replicas }}
+
+            - task: Kubernetes@1
+              displayName: Wait for rollout (api-${{ parameters.color }})
+              inputs:
+                connectionType: Kubernetes Service Connection
+                kubernetesServiceEndpoint: ${{ parameters.aksServiceConnection }}
+                namespace: $(namespace)
+                command: rollout
+                arguments: status deploy/api-${{ parameters.color }} --timeout=300s
+
+            - task: Kubernetes@1
+              displayName: Wait for rollout (web-${{ parameters.color }})
+              inputs:
+                connectionType: Kubernetes Service Connection
+                kubernetesServiceEndpoint: ${{ parameters.aksServiceConnection }}
+                namespace: $(namespace)
+                command: rollout
+                arguments: status deploy/web-${{ parameters.color }} --timeout=300s

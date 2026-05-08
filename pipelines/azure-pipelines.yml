@@ -1,0 +1,119 @@
+# Azure DevOps multi-stage pipeline for Proyecto_ML.
+#
+# Conventions:
+#   - One immutable image tag per build: $(Build.SourceVersion) short SHA.
+#   - Backend image: $(acrLoginServer)/proyecto-ml-api:$(imageTag)
+#   - Frontend image: $(acrLoginServer)/proyecto-ml-web:$(imageTag)
+#   - Approvals are configured on the AzDO 'Environments' (proyecto-ml-prod).
+#   - Branching: trunk-based. Pushes to `main` trigger CI + dev deploy. Tags
+#     `v*` trigger the prod blue/green flow.
+#
+# Service connections expected (set up once in AzDO):
+#   - acrServiceConnection      -> ACR (Docker registry)
+#   - aksDevServiceConnection   -> Kubernetes service connection (dev cluster)
+#   - aksProdServiceConnection  -> Kubernetes service connection (prod cluster)
+#
+# Variable groups (Library):
+#   - pml-common  : acrLoginServer, namespace=proyecto-ml
+#   - pml-dev     : aksClusterName, ingressHost, deployColor=blue
+#   - pml-prod    : aksClusterName, ingressHost, currentColor, idleColor
+
+name: $(Date:yyyyMMdd)$(Rev:.r)
+
+trigger:
+  branches:
+    include: [main]
+  tags:
+    include: ['v*']
+
+pr:
+  branches:
+    include: [main]
+
+variables:
+  - template: variables/common.yml
+  - name: imageTag
+    value: $(Build.SourceVersion)-$(Build.BuildId)
+  - name: isMainBranch
+    value: $[eq(variables['Build.SourceBranch'], 'refs/heads/main')]
+  - name: isReleaseTag
+    value: $[startsWith(variables['Build.SourceBranch'], 'refs/tags/v')]
+
+stages:
+
+  # 1. Static validation: lint, format, IaC validate.
+  - stage: validate
+    displayName: Validate
+    jobs:
+      - template: templates/validate.yml
+
+  # 2. Tests: backend pytest + frontend typecheck/build.
+  - stage: test
+    displayName: Test
+    dependsOn: validate
+    jobs:
+      - template: templates/test-backend.yml
+      - template: templates/test-frontend.yml
+
+  # 3. Build & push container images to ACR.
+  - stage: build_images
+    displayName: Build images
+    dependsOn: test
+    condition: and(succeeded(), or(eq(variables.isMainBranch, true), eq(variables.isReleaseTag, true)))
+    jobs:
+      - template: templates/docker-build-push.yml
+        parameters:
+          imageName: proyecto-ml-api
+          context: app/backend
+      - template: templates/docker-build-push.yml
+        parameters:
+          imageName: proyecto-ml-web
+          context: app/frontend
+          buildArgs: |
+            VITE_API_BASE=/api
+            VITE_APP_VERSION=$(imageTag)
+
+  # 4. Continuous deploy to dev. Single color (blue), rolling update.
+  - stage: deploy_dev
+    displayName: Deploy to dev
+    dependsOn: build_images
+    condition: and(succeeded(), eq(variables.isMainBranch, true))
+    variables:
+      - template: variables/dev.yml
+    jobs:
+      - template: templates/k8s-deploy.yml
+        parameters:
+          environmentName: proyecto-ml-dev
+          aksServiceConnection: $(aksServiceConnection)
+          color: $(deployColor)
+
+  # 5. Deploy NEW version to the IDLE color in prod (no traffic shift).
+  #    The proyecto-ml-prod environment in AzDO has a manual approval gate,
+  #    so the pipeline pauses here on tag releases.
+  - stage: deploy_prod_idle
+    displayName: Deploy to prod (idle color)
+    dependsOn: build_images
+    condition: and(succeeded(), eq(variables.isReleaseTag, true))
+    variables:
+      - template: variables/prod.yml
+    jobs:
+      - template: templates/k8s-deploy.yml
+        parameters:
+          environmentName: proyecto-ml-prod
+          aksServiceConnection: $(aksServiceConnection)
+          color: $(idleColor)
+          replicas: 2
+
+  # 6. Smoke the idle color, then atomically swap traffic.
+  - stage: bluegreen_switch
+    displayName: Blue/Green switch
+    dependsOn: deploy_prod_idle
+    variables:
+      - template: variables/prod.yml
+    jobs:
+      - template: templates/bluegreen-swap.yml
+        parameters:
+          environmentName: proyecto-ml-prod
+          aksServiceConnection: $(aksServiceConnection)
+          targetColor: $(idleColor)
+          previousColor: $(currentColor)

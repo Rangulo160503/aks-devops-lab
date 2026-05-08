@@ -1,0 +1,72 @@
+# Local-only stack for development.
+#
+# - postgres:16  : data lives in a named volume; reset with `docker compose down -v`
+# - backend      : Flask + Gunicorn, talks to postgres over the compose network
+# - frontend     : nginx serving the built SPA, calls backend at /api via the
+#                  Docker network. CORS is allowed for browser dev convenience.
+#
+# Usage:
+#   docker compose -f compose/docker-compose.yml up --build
+#   open http://localhost:8080      (frontend)
+#   curl http://localhost:8000/healthz   (backend direct)
+
+name: proyecto-ml
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: proyectoml
+      POSTGRES_PASSWORD: proyectoml
+      POSTGRES_DB: proyectoml
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U proyectoml -d proyectoml"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ../app/backend
+      dockerfile: Dockerfile
+    image: proyecto-ml-api:local
+    environment:
+      APP_ENV: local
+      APP_COLOR: blue
+      SECRET_KEY: dev-secret-change-me
+      DATABASE_URL: postgresql+psycopg://proyectoml:proyectoml@postgres:5432/proyectoml
+      LOG_LEVEL: INFO
+      GUNICORN_WORKERS: "2"
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ../app/frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE: /api
+        VITE_APP_VERSION: local
+    image: proyecto-ml-web:local
+    ports:
+      - "8080:8080"
+    # The frontend container only serves static assets. In compose we expose
+    # the backend separately on :8000 so the SPA, when fetched via :8080,
+    # would normally need an Ingress to reach /api. For pure local dev we
+    # recommend `npm run dev` against the local backend; the compose stack
+    # is primarily a smoke-test harness for the production images.
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  pgdata: {}

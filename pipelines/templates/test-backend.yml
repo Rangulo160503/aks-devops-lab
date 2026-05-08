@@ -1,0 +1,45 @@
+jobs:
+  - job: backend_tests
+    displayName: Backend tests (pytest)
+    pool:
+      vmImage: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci -d ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    variables:
+      DATABASE_URL: postgresql+psycopg://ci:ci@localhost:5432/ci
+      SECRET_KEY: ci-secret
+      APP_ENV: test
+      APP_COLOR: blue
+    steps:
+      - checkout: self
+
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: '3.12'
+
+      - script: |
+          python -m pip install --upgrade pip
+          pip install -r app/backend/requirements-dev.txt
+        displayName: Install deps
+
+      - script: pytest -q --junitxml=junit.xml --cov=src/backend --cov-report=xml
+        workingDirectory: app/backend
+        displayName: Run pytest
+
+      - task: PublishTestResults@2
+        condition: succeededOrFailed()
+        inputs:
+          testResultsFiles: 'app/backend/junit.xml'
+          testRunTitle: backend

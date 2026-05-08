@@ -1,0 +1,22 @@
+jobs:
+  - job: frontend_build
+    displayName: Frontend typecheck + build
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+      - checkout: self
+
+      - task: NodeTool@0
+        inputs:
+          versionSpec: '20.x'
+
+      - script: |
+          set -e
+          cd app/frontend
+          npm install --no-audit --no-fund
+          npm run typecheck
+          npm run build
+        displayName: Build SPA
+
+      - publish: app/frontend/dist
+        artifact: frontend-dist

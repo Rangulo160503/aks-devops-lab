@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: proyecto-ml-config
+  namespace: proyecto-ml
+  labels:
+    app.kubernetes.io/part-of: proyecto-ml
+data:
+  APP_NAME: "proyecto-ml-api"
+  APP_ENV: "prod"
+  LOG_LEVEL: "INFO"
+  GUNICORN_WORKERS: "2"
+  GUNICORN_THREADS: "4"
+  GUNICORN_TIMEOUT: "30"
+---
+# Tracks which color is currently active. Updated by scripts/bluegreen-switch.sh
+# *and* by the Service selector patch. Kept here for visibility / dashboards.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: proyecto-ml-active-color
+  namespace: proyecto-ml
+  labels:
+    app.kubernetes.io/part-of: proyecto-ml
+data:
+  color: "blue"

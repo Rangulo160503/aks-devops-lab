@@ -1,0 +1,7 @@
+variables:
+  - group: pml-common
+  # Defaults; the variable group should override:
+  #   acrLoginServer       : <acr>.azurecr.io
+  #   acrServiceConnection : ACR Docker registry service connection name
+  - name: namespace
+    value: proyecto-ml

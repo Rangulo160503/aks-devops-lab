@@ -1,0 +1,8 @@
+variables:
+  - group: pml-dev
+  # Group should provide:
+  #   aksServiceConnection : K8s service connection name for the dev cluster
+  #   aksClusterName       : pml-dev-aks
+  #   ingressHost          : app.dev.example.com
+  - name: deployColor
+    value: blue
