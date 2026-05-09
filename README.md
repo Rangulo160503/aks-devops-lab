@@ -29,6 +29,7 @@ Terraform on Azure, and an Azure DevOps multi-stage pipeline.
 app/
   backend/                Flask API (src layout, pytest, Dockerfile, gunicorn)
   frontend/               Vite SPA (TS strict, nginx production image)
+k8s/                      Minimal AKS lab manifests (1 replica, small requests/limits)
 infra/
   terraform/              Azure infra (AKS / ACR / Postgres / Storage modules)
   kubernetes/
@@ -103,6 +104,43 @@ kubectl -n proyecto-ml get pods,svc,ing
 
 See [`docs/deployment.md`](docs/deployment.md) for the kind/minikube and Azure
 walkthroughs.
+
+### AKS lab — container build, ACR push, `kubectl apply` (`k8s/`)
+
+Prerequisites: AKS can pull from ACR (for example `az aks update -n <cluster> -g <rg> --attach-acr pmldevacr`), cluster has **NGINX Ingress** with class `nginx`, and Azure Database for PostgreSQL (or compatible Postgres) is reachable from the cluster. Edit `k8s/ingress.yaml` `spec.rules[0].host` to your DNS name.
+
+Do not mix `kubectl apply -f k8s/...` with the existing `infra/kubernetes/base` Services named `api` / `web` in the same namespace unless you intend to replace them: Kubernetes resource names would collide.
+
+**Secrets:** with `APP_ENV=prod` the API refuses the default dev `SECRET_KEY` and SQLite URLs (`app/backend/src/backend/config.py`). Create a real Secret before applying Deployments.
+
+```bash
+# Login to ACR (Azure CLI)
+az acr login --name pmldevacr
+
+# --- Option A: build from repo root (multi-target Dockerfile) ---
+docker build --target api   -t pmldevacr.azurecr.io/proyecto-ml:backend .
+docker build --target web   -t pmldevacr.azurecr.io/proyecto-ml:frontend --build-arg VITE_API_BASE=/api --build-arg VITE_APP_VERSION=dev .
+
+# --- Option B: build from component directories (compose-style) ---
+docker build -t pmldevacr.azurecr.io/proyecto-ml:backend -f app/backend/Dockerfile app/backend
+docker build -t pmldevacr.azurecr.io/proyecto-ml:frontend --build-arg VITE_API_BASE=/api --build-arg VITE_APP_VERSION=dev -f app/frontend/Dockerfile app/frontend
+
+docker push pmldevacr.azurecr.io/proyecto-ml:backend
+docker push pmldevacr.azurecr.io/proyecto-ml:frontend
+
+kubectl apply -f k8s/namespace.yaml -f k8s/configmap.yaml
+kubectl apply -f k8s/secret.example.yaml   # replace placeholders first, or create the Secret via CLI
+kubectl apply -f k8s/deployment.yaml -f k8s/service.yaml -f k8s/ingress.yaml
+
+kubectl -n proyecto-ml rollout status deployment/api
+kubectl -n proyecto-ml rollout status deployment/web
+
+kubectl -n proyecto-ml logs deployment/api --tail=100
+kubectl -n proyecto-ml logs deployment/web --tail=50
+
+kubectl -n proyecto-ml get svc
+kubectl -n proyecto-ml get ingress
+```
 
 ### Azure infra
 

@@ -1,0 +1,14 @@
+# Build context: this directory (`app/backend`). Keeps API image small and fast.
+__pycache__
+*.py[cod]
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.coverage*
+htmlcov
+.venv
+venv
+.env
+.env.*
+*.md
+tests/

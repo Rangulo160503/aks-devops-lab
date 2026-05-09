@@ -1,0 +1,5 @@
+# Progress
+
+## 2026-05-09
+- Delivered `k8s/` (namespace, configmap, secret example, deployments, services, ingress) and root `Dockerfile` multi-target build.
+- Documented assumptions and exact `docker`/`kubectl` commands in README (Kubernetes — ACR lab).

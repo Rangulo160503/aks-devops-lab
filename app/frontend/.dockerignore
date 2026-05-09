@@ -1,0 +1,9 @@
+# Build context: this directory (`app/frontend`).
+node_modules
+dist
+.vite
+*.tsbuildinfo
+.git
+.env
+.env.*
+*.md

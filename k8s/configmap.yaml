@@ -1,0 +1,27 @@
+# Non-secret configuration for the Flask API.
+#
+# Secrets (SECRET_KEY, DATABASE_URL) live in a Kubernetes Secret — see
+# `secret.example.yaml` and apply a real Secret before the Deployments.
+#
+# GUNICORN_WORKERS=1 keeps CPU usage low on a small AKS lab node pool while
+# still using gthread for concurrency; scale replicas before raising workers.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: proyecto-ml-config
+  namespace: proyecto-ml
+  labels:
+    app.kubernetes.io/part-of: proyecto-ml
+data:
+  APP_NAME: "proyecto-ml-api"
+  APP_ENV: "prod"
+  LOG_LEVEL: "INFO"
+  GUNICORN_WORKERS: "1"
+  GUNICORN_THREADS: "2"
+  GUNICORN_TIMEOUT: "30"
+  GUNICORN_GRACEFUL_TIMEOUT: "30"
+  GUNICORN_KEEPALIVE: "5"
+  GUNICORN_ACCESS_LOG: "-"
+  GUNICORN_ERROR_LOG: "-"
+  GUNICORN_LOG_LEVEL: "info"
+  GUNICORN_FORWARDED_ALLOW_IPS: "*"

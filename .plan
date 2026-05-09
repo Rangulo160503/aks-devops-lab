@@ -1,0 +1,6 @@
+# Plan — application on AKS
+
+1. ~~Inventory `app/` (backend + frontend), ports, probes, env model~~
+2. ~~Add container build paths (Dockerfiles, .dockerignore)~~
+3. ~~Add `k8s/` manifests tuned for a small lab~~
+4. Optional: wire CI to build/push `pmldevacr.azurecr.io/proyecto-ml:*` and `kubectl apply -k` or apply `k8s/`

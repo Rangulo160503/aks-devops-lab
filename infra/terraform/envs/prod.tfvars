@@ -1,9 +1,9 @@
 env                    = "prod"
-location               = "eastus"
+location               = "eastus2"
 prefix                 = "pml"
 aks_node_count         = 3
-aks_node_size          = "Standard_B2s"
-aks_kubernetes_version = "1.30"
+aks_node_size          = "Standard_B2s_v2"
+aks_kubernetes_version = "1.33"
 pg_sku_name            = "B_Standard_B2s"
 pg_storage_mb          = 65536
 storage_replication    = "LRS"

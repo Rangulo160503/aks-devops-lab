@@ -1,4 +1,7 @@
 # syntax=docker/dockerfile:1.7
+#
+# ACR (lab): docker build -t pmldevacr.azurecr.io/proyecto-ml:frontend --build-arg VITE_API_BASE=/api --build-arg VITE_APP_VERSION=dev -f Dockerfile .
+# Run the build with context = this directory (`app/frontend`).
 
 # ---------- Stage 1: build SPA ----------
 FROM node:20-alpine AS builder

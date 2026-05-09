@@ -1,0 +1,20 @@
+# Proyecto_ML — Cursor / AI assistant rules
+
+## Project purpose
+DevOps and Kubernetes lab on Azure (AKS, ACR, Terraform). The runnable app
+lives under `app/` (Flask API + Vite SPA). `legacy/` is reference-only.
+
+## When changing code
+- Match existing style; keep diffs minimal and scoped to the request.
+- Backend: Python 3.12, Flask, Gunicorn, SQLAlchemy; config via env vars.
+- Frontend: React + TypeScript + Vite; production image uses nginx unprivileged.
+
+## Containers and Kubernetes
+- Prefer non-root images (`app/backend/Dockerfile`, `app/frontend/Dockerfile`, root `Dockerfile` targets).
+- Lab manifests: `k8s/` (single replica, small resources). Full blue/green set: `infra/kubernetes/`.
+- Image naming for ACR: `pmldevacr.azurecr.io/proyecto-ml:backend` and `:frontend` (or immutable tags).
+- Never commit real secrets; use Secrets or Key Vault patterns from `k8s/secret.example.yaml`.
+
+## Tracking
+- Log notable decisions in `.tracking/notes.md` with the date from `date`.
+- After meaningful steps, update `.plan` and `.progress` when those files exist.

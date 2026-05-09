@@ -1,4 +1,7 @@
 # syntax=docker/dockerfile:1.7
+#
+# ACR (lab): docker build -t pmldevacr.azurecr.io/proyecto-ml:backend -f Dockerfile .
+# Run the build with context = this directory (`app/backend`).
 
 # ---------- Stage 1: build wheels ----------
 FROM python:3.12-slim AS builder

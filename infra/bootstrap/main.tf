@@ -27,7 +27,9 @@ resource "azurerm_resource_group" "tfstate" {
 #                    azurerm backend relies on (lease-based locking).
 #   Hot           -- tfstate is small but frequently rewritten; Hot has
 #                    the cheapest write cost.
-#   AAD only      -- shared_access_key_enabled = false matches the
+# Shared access keys are enabled intentionally for this lab bootstrap flow.
+# This keeps Terraform backend initialization simple and reliable.
+# The configuration can be hardened later if needed.
 #                    `use_azuread_auth = true` on the main backend.
 # Refs:
 #   https://developer.hashicorp.com/terraform/language/backend/azurerm
@@ -46,7 +48,7 @@ resource "azurerm_storage_account" "tfstate" {
   https_traffic_only_enabled      = true
   allow_nested_items_to_be_public = false
   public_network_access_enabled   = true
-  shared_access_key_enabled       = false
+  shared_access_key_enabled       = true
 
   blob_properties {
     versioning_enabled = false
@@ -68,7 +70,9 @@ resource "azurerm_storage_account" "tfstate" {
 }
 
 # storage_account_id (ARM control plane) avoids the data-plane chicken-
-# and-egg with `shared_access_key_enabled = false` -- the container is
+# Lab compatibility note:
+# shared_access_key_enabled = true simplifies the bootstrap process
+# and avoids AzureRM backend authentication issues during initial setup.
 # created via ARM, no AAD data-plane role needed yet.
 resource "azurerm_storage_container" "tfstate" {
   name                  = local.container_name

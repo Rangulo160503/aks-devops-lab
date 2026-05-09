@@ -1,0 +1,15 @@
+# Namespace for the Proyecto ML stack on AKS.
+#
+# Pod Security labels mirror `infra/kubernetes/base/namespace.yaml` so the
+# same hardened pod spec (non-root, seccomp, dropped caps) stays compatible
+# with AKS Pod Security Admission in "restricted" mode.
+# Ref: https://learn.microsoft.com/en-us/azure/aks/developer-best-practices-pod-security
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: proyecto-ml
+  labels:
+    app.kubernetes.io/part-of: proyecto-ml
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted

@@ -1,0 +1,38 @@
+# NGINX Ingress: same host serves SPA (/) and JSON API (/api/...).
+#
+# Prerequisites on AKS:
+#   - Install NGINX Ingress Controller and use class `nginx`.
+#   - Point DNS (or hosts file) at the Ingress external IP for `spec.rules[0].host`.
+#
+# ssl-redirect=false keeps a cheap HTTP-only lab simple; enable TLS in prod.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: proyecto-ml
+  namespace: proyecto-ml
+  labels:
+    app.kubernetes.io/part-of: proyecto-ml
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "1m"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: proyecto-ml.example.com
+      http:
+        paths:
+          - path: /api(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: api
+                port:
+                  number: 80
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web
+                port:
+                  number: 80

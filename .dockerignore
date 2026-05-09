@@ -32,9 +32,13 @@ data/
 
 # IaC / pipelines / docs are not part of any runtime image
 infra/
+k8s/
 pipelines/
 docs/
 scripts/
+**/.terraform/
+**/*.tfstate
+**/*.tfstate.*
 .tracking/
 .plan
 .progress
